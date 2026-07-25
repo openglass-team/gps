@@ -1,38 +1,38 @@
-export interface GPSCoords {
+export interface GPSCoords {导出 接口 GPSCoords {
   lat: number;
-  lng: number;
+  lng: number;  经度: 数字;
 }
 
-export interface RouteStep {
-  distance: number;
-  duration: number;
+export interface RouteStep {导出 接口 RouteStep {导出 接口 RouteStep {导出 接口 RouteStep {
+  distance: number;距离: 数字;
+  duration持续时间: number;
   instruction: string;
-  name: string;
+  name: string;  名称: 字符串;  name名称: string字符串;  名称: 字符串;
 }
 
 export interface RouteResult {
-  totalDistance: number;
+  totalDistance总距离: number;
   totalDuration: number;
-  steps: RouteStep[];
+  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];
 }
 
 export interface POIResult {
-  name: string;
-  lat: number;
-  lng: number;
-  displayName: string;
+  name名称: string字符串;  名称: 字符串;  name名称: string字符串;  名称: 字符串;  name名称: string字符串;  名称: 字符串;  name名称: string字符串;  名称: 字符串;
+  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;
+  lng: number;经度: 数字;  经度: 数字;经度: 数字;
+  displayName: string;displayName显示名称: 字符串;
 }
 
-export async function getCurrentAddress(lat: number, lng: number): Promise<string> {
+export async function getCurrentAddress(lat: number, lng: number): Promise<string> {导出 异步 函数(纬度: 数字, 经度: 数字): Promise<字符串> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=zh`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'OpenGlass/1.0' }
   });
   const data = await res.json();
-  return data.display_name || 'Unknown location';
+  return data.display_name || 'Unknown location';return data.display_name || '未知位置';
 }
 
-export async function searchNearby(lat: number, lng: number, query: string): Promise<POIResult[]> {
+export async function searchNearby(lat: number, lng: number, query: string): Promise<POIResult[]> {异步函数 searchNearby(lat: number, lng: number, query: string): Promise<POIResult[]> {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&lat=${lat}&lon=${lng}&bounded=1&addressdetails=1&accept-language=zh`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'OpenGlass/1.0' }
