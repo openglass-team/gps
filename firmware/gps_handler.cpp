@@ -28,7 +28,7 @@ void gps_send_if_due(unsigned long now, bool connected) {
     return;
   }
 
-  uint8_t gpsBuffer[22];
+  uint8_t gpsBuffer[30];  // 30 bytes: frame(2) + fix(1) + sats(1) + lat(8) + lng(8) + alt(4) + spd(4) + course(2)
   gpsBuffer[0] = gps_frame_count & 0xFF;
   gpsBuffer[1] = (gps_frame_count >> 8) & 0xFF;
 
@@ -36,21 +36,21 @@ void gps_send_if_due(unsigned long now, bool connected) {
     gpsBuffer[2] = 1;
     gpsBuffer[3] = gps.satellites.value();
 
-    float lat = gps.location.lat();
-    float lng = gps.location.lng();
+    double lat = gps.location.lat();
+    double lng = gps.location.lng();
     float alt = gps.altitude.meters();
     float spd = gps.speed.mps();
     uint16_t course = (uint16_t)(gps.course.deg() * 100);
 
-    memcpy(&gpsBuffer[4], &lat, 4);
-    memcpy(&gpsBuffer[8], &lng, 4);
-    memcpy(&gpsBuffer[12], &alt, 4);
-    memcpy(&gpsBuffer[16], &spd, 4);
-    gpsBuffer[20] = course & 0xFF;
-    gpsBuffer[21] = (course >> 8) & 0xFF;
+    memcpy(&gpsBuffer[4], &lat, 8);
+    memcpy(&gpsBuffer[12], &lng, 8);
+    memcpy(&gpsBuffer[20], &alt, 4);
+    memcpy(&gpsBuffer[24], &spd, 4);
+    gpsBuffer[28] = course & 0xFF;
+    gpsBuffer[29] = (course >> 8) & 0xFF;
   } else {
     gpsBuffer[2] = 0;
-    memset(&gpsBuffer[3], 0, 19);
+    memset(&gpsBuffer[3], 0, 27);
   }
 
   gpsDataCharacteristic->setValue(gpsBuffer, sizeof(gpsBuffer));

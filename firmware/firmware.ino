@@ -8,6 +8,7 @@
 #include "esp_camera.h"
 #include "camera_pins.h"
 #include "mulaw.h"
+#include "gps_handler.h"
 
 // Audio
 
@@ -74,10 +75,12 @@ static BLEUUID audioDataUUID("19B10001-E8F2-537E-4F6C-D104768A1214");
 static BLEUUID audioCodecUUID("19B10002-E8F2-537E-4F6C-D104768A1214");
 static BLEUUID photoDataUUID("19B10005-E8F2-537E-4F6C-D104768A1214");
 static BLEUUID photoControlUUID("19B10006-E8F2-537E-4F6C-D104768A1214");
+static BLEUUID gpsDataUUID("19B10003-E8F2-537E-4F6C-D104768A1214");
 
 BLECharacteristic *audioDataCharacteristic;
 BLECharacteristic *photoDataCharacteristic;
 BLECharacteristic *photoControlCharacteristic;
+BLECharacteristic *gpsDataCharacteristic;
 
 BLECharacteristic *batteryLevelCharacteristic;
 
@@ -171,6 +174,14 @@ void configure_ble() {
   photoControlCharacteristic->setCallbacks(new PhotoControlCallback());
   uint8_t controlValue = 0;
   photoControlCharacteristic->setValue(&controlValue, 1);
+
+  // GPS Data characteristic
+  gpsDataCharacteristic = service->createCharacteristic(
+      gpsDataUUID,
+      BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+  ccc = new BLE2902();
+  ccc->setNotifications(true);
+  gpsDataCharacteristic->addDescriptor(ccc);
 
   // Device Information Service
 
@@ -392,6 +403,7 @@ void setup() {
 #endif
   configure_microphone();
   configure_camera();
+  gps_init();
 }
 
 void loop() {
@@ -510,6 +522,9 @@ void loop() {
     updateBatteryLevel();
     lastBatteryUpdate = millis();
   }
+
+  // GPS
+  gps_send_if_due(now, connected);
 
   // Delay
   delay(20);
