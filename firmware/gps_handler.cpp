@@ -13,7 +13,7 @@ static uint16_t gps_frame_count = 0;
 static unsigned long lastGpsUpdate = 0;
 
 void gps_init() {
-  gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
+  gpsSerial.begin(38400, SERIAL_8N1, GPS_RX, GPS_TX);
 }
 
 void gps_send_if_due(unsigned long now, bool connected) {
