@@ -13,12 +13,15 @@ static uint16_t gps_frame_count = 0;
 static unsigned long lastGpsUpdate = 0;
 
 void gps_init() {
-  gpsSerial.begin开始(9600, SERIAL_8N1, GPS_RX, GPS_TX);
+  gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
 }
 
-void gps_send_if_due(unsigned无符号无符号无符号 long now, bool connected) {
-  while (gpsSerial.available可用()) {
-    gps.encode编码(gpsSerial.read阅读());
+void gps_send_if_due(unsigned long now, bool connected) {
+  // 限制每轮最多读 50 字节，防止阻塞 loop 导致看门狗复位
+  int count = 0;
+  while (gpsSerial.available() && count < 50) {
+    gps.encode(gpsSerial.read());
+    count++;
   }
 
   if (now - lastGpsUpdate < 1000 || !connected) {
