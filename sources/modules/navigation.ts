@@ -1,79 +1,94 @@
-export interface GPSCoords {导出 接口 GPSCoords {
+export interface GPSCoords {
   lat: number;
-  lng: number;  经度: 数字;
+  lng: number;
 }
 
-export interface RouteStep {导出 接口 RouteStep {导出 接口 RouteStep {导出 接口 RouteStep {
-  distance: number;距离: 数字;
-  duration持续时间: number;
+export interface RouteStep {
+  distance: number;
+  duration: number;
   instruction: string;
-  name: string;  名称: 字符串;  name名称: string字符串;  名称: 字符串;
+  name: string;
 }
 
 export interface RouteResult {
-  totalDistance总距离: number;
+  totalDistance: number;
   totalDuration: number;
-  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];  steps: RouteStep[];步骤: RouteStep[];  步骤: RouteStep[];步骤: RouteStep[];
+  steps: RouteStep[];
 }
 
 export interface POIResult {
-  name名称: string字符串;  名称: 字符串;  name名称: string字符串;  名称: 字符串;  name名称: string字符串;  名称: 字符串;  name名称: string字符串;  名称: 字符串;
-  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;  lat: number;纬度: 数字;  纬度: 数字;纬度: 数字;
-  lng: number;经度: 数字;  经度: 数字;经度: 数字;
-  displayName: string;displayName显示名称: 字符串;
+  name: string;
+  lat: number;
+  lng: number;
+  displayName: string;
 }
 
-export async function getCurrentAddress(lat: number, lng: number): Promise<string> {导出 异步 函数(纬度: 数字, 经度: 数字): Promise<字符串> {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&accept-language=zh`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'OpenGlass/1.0' }
-  });
+const AMAP_KEY = 'b0fc38e26bb08d58b4abb2f69737e835';
+
+export async function getCurrentAddress(lat: number, lng: number): Promise<string> {
+  const url = `https://restapi.amap.com/v3/geocode/regeo?location=${lng},${lat}&key=${AMAP_KEY}`;
+  const res = await fetch(url);
   const data = await res.json();
-  return data.display_name || 'Unknown location';return data.display_name || '未知位置';
+  
+  if (data.status === '1' && data.regeocode) {
+    return data.regeocode.formatted_address || 'Unknown location';
+  } else {
+    console.error('AMAP reverse geocode error:', data.info);
+    return 'Unknown location';
+  }
 }
 
-export async function searchNearby(lat: number, lng: number, query: string): Promise<POIResult[]> {异步函数 searchNearby(lat: number, lng: number, query: string): Promise<POIResult[]> {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&lat=${lat}&lon=${lng}&bounded=1&addressdetails=1&accept-language=zh`;
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'OpenGlass/1.0' }
-  });
+export async function searchNearby(lat: number, lng: number, query: string): Promise<POIResult[]> {
+  const url = `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(query)}&key=${AMAP_KEY}`;
+  const res = await fetch(url);
   const data = await res.json();
-  return data.map((item: any) => ({
-    name: item.name || item.display_name?.split(',')[0] || 'Unknown',
-    lat: parseFloat(item.lat),
-    lng: parseFloat(item.lon),
-    displayName: item.display_name,
-  }));
+  
+  if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
+    return data.geocodes.map((item: any) => ({
+      name: item.formatted_address?.split('省')?.[0] || item.address || 'Unknown',
+      lat: parseFloat(item.location.split(',')[1]),
+      lng: parseFloat(item.location.split(',')[0]),
+      displayName: item.formatted_address || item.address || 'Unknown',
+    }));
+  } else {
+    console.error('AMAP geocode error:', data.info);
+    return [];
+  }
 }
 
 export async function getRoute(from: GPSCoords, to: GPSCoords): Promise<RouteResult> {
-  const url = `https://router.project-osrm.org/route/v1/foot/${from.lng},${from.lat};${to.lng},${to.lat}?steps=true&geometries=geojson&overview=full`;
+  const url = `https://restapi.amap.com/v3/direction/walking?origin=${from.lat},${from.lng}&destination=${to.lat},${to.lng}&key=${AMAP_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
 
-  if (!data.routes || data.routes.length === 0) {
+  if (data.status !== '1' || !data.route || !data.route.paths || data.route.paths.length === 0) {
+    console.error('AMAP route error:', data.info);
     return { totalDistance: 0, totalDuration: 0, steps: [] };
   }
 
-  const route = data.routes[0];
-  const legs = route.legs[0];
-
-  const steps: RouteStep[] = legs.steps.map((s: any) => ({
-    distance: s.distance,
-    duration: s.duration,
-    instruction: s.maneuver?.type || 'straight',
-    name: s.name || '',
-  }));
+  const path = data.route.paths[0];
+  const steps: RouteStep[] = [];
+  
+  if (path.steps) {
+    path.steps.forEach((step: any) => {
+      steps.push({
+        distance: step.distance || 0,
+        duration: step.duration || 0,
+        instruction: step.instruction || 'straight',
+        name: step.road || '',
+      });
+    });
+  }
 
   return {
-    totalDistance: route.distance,
-    totalDuration: route.duration,
+    totalDistance: path.distance || 0,
+    totalDuration: path.duration || 0,
     steps,
   };
 }
 
 export function formatRouteSteps(route: RouteResult): string {
-  if (route.steps.length === 0) return 'No route found';
+  if (route.steps.length === 0) return '未找到路线';
 
   const maneuverMap: Record<string, string> = {
     'turn': '转弯',
@@ -93,6 +108,14 @@ export function formatRouteSteps(route: RouteResult): string {
     'sharp left': '急左转',
     'sharp right': '急右转',
     'uturn': '调头',
+    '直行': '直行',
+    '左转': '左转',
+    '右转': '右转',
+    '向左前方': '向左前方',
+    '向右前方': '向右前方',
+    '向左后方': '向左后方',
+    '向右后方': '向右后方',
+    '到达': '到达',
   };
 
   let text = '';
@@ -112,18 +135,22 @@ export function formatRouteSteps(route: RouteResult): string {
     }
   }
 
-  text += `。全程约${Math.round(route.totalDistance)}米，步行约${Math.round(route.totalDuration / 60)}分钟。`;
-  return text;
+  const totalDist = route.totalDistance < 1000
+    ? `${Math.round(route.totalDistance)}米`
+    : `${(route.totalDistance / 1000).toFixed(1)}公里`;
+  text += `。全程约${totalDist}，步行约${Math.round(route.totalDuration / 60)}分钟。`;  文本 += `。全程约${totalDist}，步行约${Math.round(route.totalDuration / 60)}分钟。`;
+  
+  return text;  返回 文本;
 }
 
-export async function navigateTo(
-  current: GPSCoords,
-  destination: string
-): Promise<{ route: RouteResult; poi: POIResult; instructions: string } | null> {
+export async function navigateTo(导出 异步 函数 导航到(
+  current: GPSCoords,  当前：GPSCoords，
+  destination: string  目标: 字符串
+): Promise<{ route: RouteResult; poi: POIResult; instructions: string } | null> {): Promise<{ route: RouteResult; poi: POIResult; instructions: string } | null> {): Promise<{ route: RouteResult; poi: POIResult; instructions: string } | null> {): Promise<{ route: RouteResult; poi: POIResult; instructions: string } | null> {
   const pois = await searchNearby(current.lat, current.lng, destination);
-  if (pois.length === 0) return null;
+  if (pois.length === 0) return null;  如果 (pois.长度 === 0) 返回 空;
 
-  const target = pois[0];
+  const target = pois[0];  const 目标 = pois[0];
   const route = await getRoute(current, { lat: target.lat, lng: target.lng });
   const instructions = formatRouteSteps(route);
 
