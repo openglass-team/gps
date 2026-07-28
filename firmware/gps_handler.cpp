@@ -1,4 +1,5 @@
 #include "gps_handler.h"
+#include "onenet_handler.h"
 #include <TinyGPS++.h>
 #include <BLEDevice.h>
 
@@ -18,6 +19,9 @@ void gps_init() {
   pinMode(GPS_RX, INPUT);
   digitalWrite(GPS_RX, LOW);
   pinMode(GPS_TX, OUTPUT);
+  
+  onenet_init();
+  
   Serial.print("[GPS] GT-U8 RX=");
   Serial.print(GPS_RX);
   Serial.print(" TX=");
@@ -30,40 +34,38 @@ void gps_send_if_due(unsigned long now, bool connected) {
   int count = 0;
   while (Serial2.available() && count < 50) {
     char c = Serial2.read();
-    Serial.write(c);    串口。write编写编写(c);
-    gps.encode编码(c);    gps。encode编码(c);
+    Serial.write(c);
+    gps.encode(c);
     count++;
   }
 
-  unsigned long sinceLast = now - lastGpsUpdate;  
-  if如果 (sinceLast自上次 < 1000) {自上次 < 1000) {  如果 (sinceLast自上次自上次 < 1000) {自上次以来1000) {
+  unsigned long sinceLast = now - lastGpsUpdate;
+  if (sinceLast < 1000) {
     return;
   }
 
-  Serial.print("[GPS] satellites="); 串口。print("[GPS]全球定位系统] satellites="“[GPS]全球定位系统] 卫星=”);
+  Serial.print("[GPS] satellites=");
   Serial.print(gps.satellites.value());
-  Serial.print(" valid=");  串口。print(" valid="" 有效="); 串口。print(" valid=");  串口。print(" valid="" 有效="); 串口。print(" valid="" 有效=");  串口。print(" valid="" 有效="" 有效="); 串口。print(" valid=");  串口。print(" valid="" 有效=");
-  Serial.print(gps.location.isValid());  串口。print(gps.location.isValid()); 串口。print(gps.location.isValid());  串口。print(gps.location.isValid()); 串口。print(gps.location.isValid());  串口。print(gps.location.isValid()); 串口。print(gps.location.isValid());  串口。print(gps.location.isValid());
-  Serial.print(" connected="" 连接=");  串口。print(" connected="" 连接="" 连接=") 串口。print(" connected="" 连接=");  串口。print(" connected="" 连接="" 连接="); 串口。print(" connected=");  串口。print(" connected="" 连接=");
+  Serial.print(" valid=");
+  Serial.print(gps.location.isValid());
+  Serial.print(" connected=");
   Serial.println(connected);
 
   if (gps.location.isValid()) {
-    Serial.print("[GPS] Lat=");    Serial.print("[GPS] 纬度=");;    串口。print("[GPS] 纬度=");
+    Serial.print("[GPS] Lat=");
     Serial.print(gps.location.lat(), 6);
     Serial.print(" Lng=");
     Serial.print(gps.location.lng(), 6);
-    Serial.print(" Alt=");    Serial.打印(" Alt=");    串口。打印(" Alt=");    串口。打印(" Alt=");
-    Serial.print(gps.altitude.meters(), 1);
     Serial.print("m HDOP=");
     Serial.println(gps.hdop.hdop());
   }
 
-  if (!connected) {  如果 (!已连接) {
+  if (!connected) {
     lastGpsUpdate = now;
     return;
   }
 
-  uint8_t gpsBuffer[22];
+  uint8_t gpsBuffer[16];
   gpsBuffer[0] = gps_frame_count & 0xFF;
   gpsBuffer[1] = (gps_frame_count >> 8) & 0xFF;
 
@@ -71,11 +73,9 @@ void gps_send_if_due(unsigned long now, bool connected) {
     gpsBuffer[2] = 1;
     gpsBuffer[3] = gps.satellites.value();
 
-    float lat = gps.location.lat();
-    float lng = gps.location.lng();
-    float alt = gps.altitude.meters();
-    float spd = gps.speed.mps();
-    uint16_t course = (uint16_t)(gps.course.deg() * 100);
+    double lat = gps.location.lat();
+    double lng = gps.location.lng();
+    double spd = gps.speed.mps();
 
     Serial.print("[GPS] SEND #");
     Serial.print(gps_frame_count);
@@ -83,24 +83,19 @@ void gps_send_if_due(unsigned long now, bool connected) {
     Serial.print(lat, 6);
     Serial.print(" lng=");
     Serial.print(lng, 6);
-    Serial.print(" alt=");
-    Serial.print(alt, 1);
     Serial.print("m spd=");
     Serial.print(spd, 1);
-    Serial.print("m/s course=");
-    Serial.print(course / 100.0, 1);
-    Serial.println();
+    Serial.println("m/s");
 
     memcpy(&gpsBuffer[4], &lat, 4);
     memcpy(&gpsBuffer[8], &lng, 4);
-    memcpy(&gpsBuffer[12], &alt, 4);
-    memcpy(&gpsBuffer[16], &spd, 4);
-    gpsBuffer[20] = course & 0xFF;
-    gpsBuffer[21] = (course >> 8) & 0xFF;
+    memcpy(&gpsBuffer[12], &spd, 4);
+    
+    onenet_upload_gps(lat, lng, spd);
   } else {
     gpsBuffer[2] = 0;
-    memset(&gpsBuffer[3], 0, 19);
-    Serial.println("[GPS] SEND no fix");    
+    memset(&gpsBuffer[3], 0, 13);
+    Serial.println("[GPS] SEND no fix");
   }
 
   gpsDataCharacteristic->setValue(gpsBuffer, sizeof(gpsBuffer));
