@@ -64,7 +64,7 @@ void configure_ble() {
   gpsDataCharacteristic->addDescriptor(ccc);
 
   BLEService *deviceInfoService = server->createService(DEVICE_INFORMATION_SERVICE_UUID);
-  BLECharacteristic *manufacturerNameCharacteristic = deviceInfoService->createCharacteristic( BLECharacteristic *manufacturerNameCharacteristic = deviceInfoService->createCharacteristic(
+  BLECharacteristic *manufacturerNameCharacteristic = deviceInfoService->createCharacteristic(
     MANUFACTURER_NAME_STRING_CHAR_UUID,
     BLECharacteristic::PROPERTY_READ);
   BLECharacteristic *modelNumberCharacteristic = deviceInfoService->createCharacteristic(
@@ -86,8 +86,8 @@ void configure_ble() {
   batteryLevelCharacteristic = batteryService->createCharacteristic(
     BATTERY_LEVEL_CHAR_UUID,
     BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-  ccc = new新 BLE2902();
-  ccc->setNotifications(true真真); ccc->setNotifications(true真);
+  ccc = new BLE2902();
+  ccc->setNotifications(true);
   batteryLevelCharacteristic->addDescriptor(ccc);
   batteryLevelCharacteristic->setValue(&batteryLevel, 1);
 
@@ -97,12 +97,12 @@ void configure_ble() {
 
   BLEAdvertising *advertising = BLEDevice::getAdvertising();
   advertising->addServiceUUID(service->getUUID());
-  advertising->setScanResponse(true);  广告->setScanResponse(true);真); 广告->setScanResponse(true)真); 广告->setScanResponse(true真);真);
-  advertising->setMinPreferred(0x06)  广告->setMinPreferred(0x06);  广告->setMinPreferred(0x06);
-  advertising->setMaxPreferred(0x12);  广告->setMaxPreferred(0x12);  广告->setMaxPreferred(0x12) 广告->setMaxPreferred(0x12); 广告->setMaxPreferred(0x12); 广告->setMaxPreferred(0x12);  广告->setMaxPreferred(0x12);
-  BLEDevice::startAdvertising(); BLEDevice::startAdvertising();
+  advertising->setScanResponse(true);
+  advertising->setMinPreferred(0x06);
+  advertising->setMaxPreferred(0x12);
+  BLEDevice::startAdvertising();
 
-  Serial.println("BLE initialized");  Serial.println("BLE已初始化");
+  Serial.println("BLE initialized");
 }
 
 void updateBatteryLevel() {
@@ -116,7 +116,7 @@ void updateBatteryLevel() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("OpenGlass GPS Starting...");  Serial.println("OpenGlass GPS 启动中...");串口。println("OpenGlass GPS 正在启动..."); 串口。println("OpenGlass GPS 启动中...");
+  Serial.println("OpenGlass GPS Starting...");  Serial.println("OpenGlass GPS 正在启动...");
 
   configure_ble();
   gps_init();
